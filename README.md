@@ -109,3 +109,25 @@ To remove volumes too:
 ```powershell
 docker compose down -v
 ```
+
+## M3 - Trino Query Engine
+
+This extension adds Trino and Nessie to the lakehouse stack for Iceberg analytics.
+
+Start the M3 services from the project root:
+
+```powershell
+.\scripts\start_m3.ps1
+```
+
+Open the Trino UI at:
+
+`http://localhost:8082`
+
+Run the analytics queries from `queries/analytics.sql` using Trino, for example:
+
+```powershell
+docker exec trino trino --execute "SELECT * FROM information_schema.tables WHERE table_schema = 'iceberg'"
+# or
+cat queries/analytics.sql | docker exec -i trino trino --file -
+```

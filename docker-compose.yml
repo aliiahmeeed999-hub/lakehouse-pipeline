@@ -254,6 +254,34 @@ services:
       retries: 3
       start_period: 15s
 
+  nessie:
+    image: projectnessie/nessie:0.80.0
+    container_name: nessie
+    ports:
+      - "19120:19120"
+    environment:
+      QUARKUS_DATASOURCE_DB_KIND: in-memory
+    networks:
+      - lakehouse
+    restart: always
+
+  trino:
+    image: trinodb/trino:446
+    container_name: trino
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./trino/catalog:/etc/trino/catalog
+      - ./trino/config:/etc/trino
+    depends_on:
+      nessie:
+        condition: service_started
+      minio1:
+        condition: service_started
+    networks:
+      - lakehouse
+    restart: always
+
   mc-init:
     image: minio/mc:latest
     container_name: mc-init
