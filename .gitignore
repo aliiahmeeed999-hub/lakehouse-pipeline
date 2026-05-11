@@ -1,0 +1,17 @@
+# Docker volumes and local data
+**/data/
+*.log
+
+# Evidence folder (local only)
+evidence/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+
+# Secrets (never commit real credentials)
+.env
