@@ -307,6 +307,21 @@ services:
         mc ls local &&
         echo '>>> mc-init complete.'
       "
+  spark:
+    image: apache/spark:3.5.1-scala2.12-java17-python3-r-ubuntu
+    container_name: spark
+    depends_on:
+      - minio1
+      - nessie
+    environment:
+      SPARK_MODE: master
+    ports:
+      - "4040:4040"
+      - "7077:7077"
+    volumes:
+      - ./spark:/opt/spark-apps
+    networks:
+      - lakehouse
 
 volumes:
   postgres_data:
