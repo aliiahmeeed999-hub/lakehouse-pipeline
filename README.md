@@ -131,3 +131,21 @@ docker exec trino trino --execute "SELECT * FROM information_schema.tables WHERE
 # or
 cat queries/analytics.sql | docker exec -i trino trino --file -
 ```
+
+## Delivery Semantics
+
+The Kafka Connect S3 Sink connector provides **at-least-once** delivery.
+Exactly-once delivery is not supported by the S3/MinIO sink because S3
+object writes are not transactional — the connector cannot atomically
+commit an offset and a file write together.
+
+Duplicate records are handled at the Iceberg layer: the Spark ETL job
+uses INSERT INTO (append), and Iceberg snapshots allow deduplication
+queries if needed. For a production system, deduplication would be
+enforced with a MERGE INTO statement keyed on order_id before
+exposing data to Trino.
+
+The Nessie catalog is configured with in-memory persistence
+(QUARKUS_DATASOURCE_DB_KIND=in-memory) for local development.
+In production, replace with a PostgreSQL or DynamoDB backend to
+persist catalog metadata across restarts.

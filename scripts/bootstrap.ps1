@@ -61,11 +61,8 @@ Wait-ForHttp -Url "http://localhost:8083/connectors"
 
 Write-Host "Registering connectors..."
 Upsert-Connector -ConnectorFile "$projectRoot/connectors/postgres-source.json"
-Start-Sleep -Seconds 3
-Upsert-Connector -ConnectorFile "$projectRoot/connectors/hdfs-sink.json"
 
 Write-Host "Connector status snapshot:"
 Invoke-RestMethod -Uri "http://localhost:8083/connectors/postgres-cdc-source/status" -Method Get | ConvertTo-Json -Depth 8
-Invoke-RestMethod -Uri "http://localhost:8083/connectors/hdfs-sink-orders/status" -Method Get | ConvertTo-Json -Depth 8
 
 Write-Host "Bootstrap completed."

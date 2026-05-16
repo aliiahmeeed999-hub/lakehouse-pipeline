@@ -89,39 +89,6 @@ services:
       timeout: 5s
       retries: 10
 
-  namenode:
-    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
-    hostname: namenode
-    container_name: namenode
-    environment:
-      - CLUSTER_NAME=ass2-hdfs
-      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
-    ports:
-      - "9870:9870"
-      - "8020:8020"
-    volumes:
-      - namenode_data:/hadoop/dfs/name
-    healthcheck:
-      test: ["CMD", "bash", "-c", "hdfs dfs -ls / > /dev/null 2>&1"]
-      interval: 30s
-      timeout: 10s
-      retries: 20
-
-  datanode:
-    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
-    hostname: datanode
-    container_name: datanode
-    depends_on:
-      namenode:
-        condition: service_started
-    environment:
-      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
-      - SERVICE_PRECONDITION=namenode:9870
-    ports:
-      - "9864:9864"
-    volumes:
-      - datanode_data:/hadoop/dfs/data
-
   kafka-connect:
     build:
       context: ./kafka-connect
@@ -308,7 +275,9 @@ services:
         echo '>>> mc-init complete.'
       "
   spark:
-    image: apache/spark:3.5.1-scala2.12-java17-python3-r-ubuntu
+    build:
+      context: ./spark
+      dockerfile: Dockerfile
     container_name: spark
     depends_on:
       - minio1
@@ -320,13 +289,12 @@ services:
       - "7077:7077"
     volumes:
       - ./spark:/opt/spark-apps
+      - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
     networks:
       - lakehouse
 
 volumes:
   postgres_data:
-  namenode_data:
-  datanode_data:
   minio1_data:
   minio2_data:
   minio3_data:
