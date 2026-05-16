@@ -5,14 +5,17 @@ spark = SparkSession.builder \
     .appName("m2-register-or-append-iceberg") \
     .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
     .config("spark.sql.catalog.iceberg", "org.apache.iceberg.spark.SparkCatalog") \
-    .config("spark.sql.catalog.iceberg.type", "rest") \
-    .config("spark.sql.catalog.iceberg.uri", "http://nessie:19120/api/v1") \
+    .config("spark.sql.catalog.iceberg.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog") \
+    .config("spark.sql.catalog.iceberg.uri", "http://nessie:19120/api/v2") \
+    .config("spark.sql.catalog.iceberg.ref", "main") \
+    .config("spark.sql.catalog.iceberg.authentication.type", "NONE") \
     .config("spark.sql.catalog.iceberg.warehouse", "s3a://iceberg-warehouse/") \
     .config("spark.hadoop.fs.s3a.endpoint", "http://minio1:9000") \
     .config("spark.hadoop.fs.s3a.access.key", "minioadmin") \
     .config("spark.hadoop.fs.s3a.secret.key", "minioadmin123") \
     .config("spark.hadoop.fs.s3a.path.style.access", "true") \
     .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false") \
+    .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
     .getOrCreate()
 
 raw_path = "s3a://raw-events/"
@@ -58,3 +61,5 @@ FROM iceberg.events.raw_events
 GROUP BY year, month, day
 ORDER BY year, month, day
 """).show()
+
+

@@ -42,10 +42,11 @@ FROM iceberg.events.raw_events
 WHERE year = '2025' AND month = '06';
 
 -- Query 5: top 5 products by total revenue
-SELECT product_id,
+SELECT product_code,
        SUM(price * quantity) AS total_revenue,
        COUNT(*) AS order_count
 FROM iceberg.events.raw_events
-GROUP BY product_id
+GROUP BY product_code
 ORDER BY total_revenue DESC
 LIMIT 5;
+
