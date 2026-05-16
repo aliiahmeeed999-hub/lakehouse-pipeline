@@ -6,8 +6,10 @@ try:
         .appName("m2-spark-validation") \
         .config("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions") \
         .config("spark.sql.catalog.iceberg", "org.apache.iceberg.spark.SparkCatalog") \
-        .config("spark.sql.catalog.iceberg.type", "rest") \
-        .config("spark.sql.catalog.iceberg.uri", "http://nessie:19120/api/v1") \
+        .config("spark.sql.catalog.iceberg.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog") \
+        .config("spark.sql.catalog.iceberg.uri", "http://nessie:19120/api/v2") \
+        .config("spark.sql.catalog.iceberg.ref", "main") \
+        .config("spark.sql.catalog.iceberg.authentication.type", "NONE") \
         .config("spark.sql.catalog.iceberg.warehouse", "s3a://iceberg-warehouse/") \
         .config("spark.hadoop.fs.s3a.endpoint", "http://minio1:9000") \
         .config("spark.hadoop.fs.s3a.access.key", "minioadmin") \
