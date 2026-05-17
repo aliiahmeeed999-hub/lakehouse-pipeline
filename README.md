@@ -1,8 +1,10 @@
-# CSC5356 ASS2 - Realtime CDC to HDFS
+# CSC5356 ASS2 - Realtime CDC to MinIO + Iceberg
 
 This project implements an enterprise-style CDC pipeline:
 
-`PostgreSQL -> Debezium (Kafka Connect Source) -> Kafka -> Kafka Connect HDFS Sink -> HDFS`
+`PostgreSQL -> Debezium (Kafka Connect Source) -> Kafka -> Kafka Connect S3 Sink -> MinIO`
+
+Iceberg metadata is managed through Nessie and queried by Spark and Trino.
 
 ## 1) Prerequisites
 
@@ -15,7 +17,7 @@ This project implements an enterprise-style CDC pipeline:
 - `docker-compose.yml` - full platform stack
 - `sql/init.sql` - source schema + seed data
 - `connectors/postgres-source.json` - Debezium source connector config
-- `connectors/hdfs-sink.json` - HDFS sink connector config
+- `connectors/minio-parquet-sink.json` - MinIO/S3 sink connector config
 - `scripts/bootstrap.ps1` - startup + connector registration
 - `scripts/run_test_changes.ps1` - CRUD + schema evolution + benchmark load
 - `scripts/collect_evidence.ps1` - command outputs for report appendix
@@ -47,29 +49,31 @@ Run:
 Then verify:
 
 ```powershell
-docker exec kafka kafka-topics --bootstrap-server kafka:29092 --list
-docker exec kafka kafka-console-consumer --bootstrap-server kafka:29092 --topic postgres.public.orders --from-beginning --max-messages 10
-docker exec namenode hdfs dfs -ls -R /data/cdc
-docker exec connect curl -s http://localhost:8083/connectors/postgres-cdc-source/status
-docker exec connect curl -s http://localhost:8083/connectors/hdfs-sink-orders/status
+docker exec broker kafka-topics --bootstrap-server broker:29092 --list
+docker exec broker kafka-console-consumer --bootstrap-server broker:29092 --topic postgres.public.orders --from-beginning --max-messages 10
+docker exec kafka-connect curl -s http://localhost:8083/connectors/postgres-cdc-source/status
+docker exec kafka-connect curl -s http://localhost:8083/connectors/minio-parquet-sink/status
+docker exec mc-init mc ls local/raw-events
 ```
+
+You can also inspect object storage through the MinIO console at `http://localhost:9001`.
 
 ## 5) Reliability / Recovery Tests
 
 ### Connect restart test
 ```powershell
-docker restart connect
+docker restart kafka-connect
 Start-Sleep -Seconds 20
-docker exec connect curl -s http://localhost:8083/connectors/postgres-cdc-source/status
-docker exec connect curl -s http://localhost:8083/connectors/hdfs-sink-orders/status
+docker exec kafka-connect curl -s http://localhost:8083/connectors/postgres-cdc-source/status
+docker exec kafka-connect curl -s http://localhost:8083/connectors/minio-parquet-sink/status
 ```
 
 ### Kafka restart test
 ```powershell
-docker restart kafka
+docker restart broker
 Start-Sleep -Seconds 25
-docker exec connect curl -s http://localhost:8083/connectors/postgres-cdc-source/status
-docker exec connect curl -s http://localhost:8083/connectors/hdfs-sink-orders/status
+docker exec kafka-connect curl -s http://localhost:8083/connectors/postgres-cdc-source/status
+docker exec kafka-connect curl -s http://localhost:8083/connectors/minio-parquet-sink/status
 ```
 
 Note: Connect startup can take a few minutes because plugins are installed on container boot.
@@ -93,8 +97,8 @@ Capture these for the report:
 3. Debezium connector status (`RUNNING`)
 4. Kafka topic records showing insert/update/delete
 5. Schema Registry subjects (`http://localhost:8081/subjects`)
-6. HDFS sink connector status (`RUNNING`)
-7. HDFS directory listing + sample file content
+6. MinIO/S3 sink connector status (`RUNNING`)
+7. MinIO bucket listing + sample file content
 8. Recovery test (service restart + recovered connector state)
 9. Benchmark summary (rows/s + row counts)
 
@@ -122,7 +126,7 @@ Start the M3 services from the project root:
 
 Open the Trino UI at:
 
-`http://localhost:8082`
+`http://localhost:8084`
 
 Run the analytics queries from `queries/analytics.sql` using Trino, for example:
 
